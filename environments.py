@@ -1,9 +1,11 @@
+# environments.py
 from layers import Layer
 from individual import Individual
 from genepool import GenePool
 from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
 
 class Environment:
     def __init__(self, layers: list[Layer], genepool: GenePool, pbf_function: Callable):
@@ -18,7 +20,7 @@ class Environment:
         self.pbf_function: Callable = pbf_function
         self.fitness_history = []
         self.population_history = []
-
+    
     def compile(self, start_population: int, max_individuals: int, batch_size: int = 10, individuals: list[Individual] = [], early_stop: float = float('inf')):
         assert start_population >= 2, "Start population must be at least 2"
 
@@ -31,29 +33,28 @@ class Environment:
 
         for layer in self.layers:
             layer.initialize(self)
-
-            
+    
     def batch_fitness(self):
         individuals_for_measurement = [individual for individual in self.individuals if individual.modified]
         
-        fitnesses = []
-        for i in range(0, len(individuals_for_measurement), self.batch_size):
-            batch = individuals_for_measurement[i:i+self.batch_size]
-            batch_genes = np.stack([individual.genes for individual in batch])
-            phenotypes = self.genepool.grn.forward(batch_genes)
+        if not individuals_for_measurement:
+            return
+        
+        batch_size = self.batch_size
+        for i in range(0, len(individuals_for_measurement), batch_size):
+            batch = individuals_for_measurement[i:i+batch_size]
+            batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32).to(self.genepool.grn.device)
+            phenotypes = self.genepool.grn.forward(batch_genes).detach()
             batch_fitnesses = self.pbf_function(phenotypes)
-            fitnesses.extend(batch_fitnesses)
             
             for individual, fitness in zip(batch, batch_fitnesses):
                 individual.fitness = fitness
                 individual.modified = False
 
-        return fitnesses
-
     def sort_individuals(self):
         self.individuals.sort(key=lambda x: x.fitness, reverse=True)
-
-    def evolve(self, generations=100):
+    
+    def evolve(self, generations=100, backprop_mode='divide_and_conquer'):
         assert self.compiled, "Environment must be compiled before evolving"
 
         for i in range(generations):
@@ -66,19 +67,22 @@ class Environment:
                     self.batch_fitness()
                     self.sort_individuals()
                     self.individuals = self.individuals[:self.max_individuals]
-                if self.individuals[0].fitness > self.early_stop:
+                if self.individuals and self.individuals[0].fitness > self.early_stop:
+                    print(f"Early stopping at generation {i} with fitness {self.individuals[0].fitness}")
                     return self.individuals
             
+            # After each generation, train the GRN
+            loss = self.genepool.grn.backprop_network(self.individuals, mode=backprop_mode)
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))
             
             print(f"Generation: {i}")
             print("Max fitness: ", self.individuals[0].fitness)
             print("Population size: ", len(self.individuals))
-            print()
+            print(f"GRN Training Loss: {loss}\n")
     
         return self.individuals
-
+    
     def plot(self):
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
 
