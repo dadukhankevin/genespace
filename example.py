@@ -18,8 +18,8 @@ insertion_selection = RandomSelection(amount_to_select=lambda: 2)
 
 # Initialize GRN with desired input and output dimensions
 input_length = 5
-output_shape = (40,)
-gene_regulatory_network = GeneRegulatoryNetwork(input_length=input_length, hidden_size=2, num_layers=3, output_shape=output_shape, device='cpu')
+output_shape = (10,)
+gene_regulatory_network = GeneRegulatoryNetwork(input_length=input_length, hidden_size=5, num_layers=3, output_shape=output_shape, device='cpu')
 
 gene_pool = GenePool(size=input_length, grn=gene_regulatory_network)  # size is the input_length
 
