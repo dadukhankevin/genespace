@@ -54,7 +54,7 @@ class Environment:
     def sort_individuals(self):
         self.individuals.sort(key=lambda x: x.fitness, reverse=True)
     
-    def evolve(self, generations=100, backprop_mode='divide_and_conquer'):
+    def evolve(self, generations=100, backprop_mode='divide_and_conquer', backprop_every_n=1, epochs=1):
         assert self.compiled, "Environment must be compiled before evolving"
 
         for i in range(generations):
@@ -71,15 +71,21 @@ class Environment:
                     print(f"Early stopping at generation {i} with fitness {self.individuals[0].fitness}")
                     return self.individuals
             
-            # After each generation, train the GRN
-            loss = self.genepool.grn.backprop_network(self.individuals, mode=backprop_mode)
+            # Train the GRN every backprop_every_n generations
+            if i % backprop_every_n == 0:
+                for _ in range(epochs):
+                    loss = self.genepool.grn.backprop_network(self.individuals, mode=backprop_mode)
+            
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))
             
             print(f"Generation: {i}")
             print("Max fitness: ", self.individuals[0].fitness)
             print("Population size: ", len(self.individuals))
-            print(f"GRN Training Loss: {loss}\n")
+            if i % backprop_every_n == 0:
+                print(f"GRN Training Loss: {loss}\n")
+            else:
+                print()
     
         return self.individuals
     
