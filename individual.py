@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from grn import GeneRegulatoryNetwork
+from genespace.grn import GeneRegulatoryNetwork
 
 class Individual:
     def __init__(self, genes: np.ndarray, grn: GeneRegulatoryNetwork):

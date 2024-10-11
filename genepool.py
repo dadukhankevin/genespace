@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from individual import Individual
-from grn import GeneRegulatoryNetwork
+from genespace.individual import Individual
+from genespace.grn import GeneRegulatoryNetwork
 
 
 class GenePool:

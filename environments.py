@@ -1,7 +1,7 @@
 # environments.py
-from layers import Layer
-from individual import Individual
-from genepool import GenePool
+from genespace.layers import Layer
+from genespace.individual import Individual
+from genespace.genepool import GenePool
 from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt

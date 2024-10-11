@@ -1,9 +1,9 @@
 # example.py
 from genepool import GenePool
 from grn import GeneRegulatoryNetwork
-from layers import NPointCrossover, UniformMutation
-from environments import Environment
-from selection import RandomSelection
+from genespace.layers import NPointCrossover, UniformMutation
+from genespace.environments import Environment
+from genespace.selection import RandomSelection
 import numpy as np
 
 def phenotype_fitness_function(phenotypes):

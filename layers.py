@@ -1,5 +1,5 @@
-from genepool import GenePool
-from individual import Individual  
+from genespace.genepool import GenePool
+from genespace.individual import Individual  
 import numpy as np
 from typing import Callable
 import random

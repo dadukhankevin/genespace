@@ -1,5 +1,5 @@
 import random
-from individual import Individual
+from genespace.individual import Individual
 
 
 make_callable = lambda x: x if callable(x) else lambda: x
