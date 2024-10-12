@@ -89,10 +89,8 @@ class UniformMutation(Layer):
     def mutate(self, individual: Individual) -> Individual:
         noise = np.random.uniform(-self.magnitude, self.magnitude, size=individual.genes.shape)
         
-        if self.device == "cpu":
-            mutated_genes = individual.genes + noise
-        elif self.device == "gpu":
-            mutated_genes = individual.genes + noise
+        mutated_genes = individual.genes + noise
+
 
         # Clip values between 0 and 1
         mutated_genes = np.clip(mutated_genes, 0, 1)
