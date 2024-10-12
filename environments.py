@@ -18,8 +18,8 @@ class Environment:
         self.batch_size: int = 10
         self.genepool: GenePool = genepool
         self.pbf_function: Callable = pbf_function
-        self.fitness_history = []
-        self.population_history = []
+        self.fitness_history: list[float] = []
+        self.population_history: list[int] = []
     
     def compile(self, start_population: int, max_individuals: int, batch_size: int = 10, individuals: list[Individual] = [], early_stop: float = float('inf')):
         assert start_population >= 2, "Start population must be at least 2"
@@ -30,6 +30,8 @@ class Environment:
         self.early_stop = early_stop
         self.batch_size = batch_size
         self.compiled = True
+        self.fitness_history: list[float] = []
+        self.population_history: list[int] = []
 
         for layer in self.layers:
             layer.initialize(self)
@@ -43,9 +45,9 @@ class Environment:
         batch_size = self.batch_size
         for i in range(0, len(individuals_for_measurement), batch_size):
             batch = individuals_for_measurement[i:i+batch_size]
-            batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32).to(self.genepool.grn.device)
+            batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32).to(self.genepool.gsp.device)
             
-            phenotypes = self.genepool.grn.forward(batch_genes).detach()
+            phenotypes = self.genepool.gsp.forward(batch_genes).detach()
             batch_fitnesses = self.pbf_function(phenotypes)
             
             for individual, fitness in zip(batch, batch_fitnesses):
@@ -55,7 +57,7 @@ class Environment:
     def sort_individuals(self):
         self.individuals.sort(key=lambda x: x.fitness, reverse=True)
     
-    def evolve(self, generations=100, backprop_mode='divide_and_conquer', backprop_every_n=1, epochs=1):
+    def evolve(self, generations=100, backprop_mode='divide_and_conquer', backprop_every_n=1, epochs=1, train_top_percent=.5):
         assert self.compiled, "Environment must be compiled before evolving"
 
         for i in range(generations):
@@ -76,7 +78,7 @@ class Environment:
             if backprop_mode != 'none':
                 if i % backprop_every_n == 0:
                     for _ in range(epochs):
-                        loss = self.genepool.grn.backprop_network(self.individuals, mode=backprop_mode)
+                        loss = self.genepool.gsp.backprop_network(self.individuals, mode=backprop_mode, train_top_percent=train_top_percent)
             
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))

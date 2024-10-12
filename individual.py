@@ -1,10 +1,10 @@
 import torch
 import numpy as np
-from genespace.grn import GeneRegulatoryNetwork
+from genespace.decoders import MLPGeneSpaceDecoder
 
 class Individual:
-    def __init__(self, genes: np.ndarray, grn: GeneRegulatoryNetwork):
-        self.grn = grn
+    def __init__(self, genes: np.ndarray, gsp: MLPGeneSpaceDecoder):
+        self.gsp = gsp 
         self.genes = genes  # Now a NumPy array
         self.fitness = 0
         self.modified = True

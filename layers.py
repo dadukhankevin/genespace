@@ -55,7 +55,7 @@ class NPointCrossover(Layer):
             child_genes[start:] = current_parent.genes[start:]
 
             # Create new individual
-            child = Individual(genes=child_genes, grn=parent1.grn)
+            child = Individual(genes=child_genes, gsp=parent1.gsp)
             self.mark_modified(child)
 
             children.append(child)

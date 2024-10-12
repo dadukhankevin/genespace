@@ -1,13 +1,13 @@
 import torch
 import numpy as np
 from genespace.individual import Individual
-from genespace.grn import GeneRegulatoryNetwork
+from genespace.decoders import MLPGeneSpaceDecoder
 
 
 class GenePool:
-    def __init__(self, size, grn: GeneRegulatoryNetwork, binary_mode=False):
+    def __init__(self, size, gsp: MLPGeneSpaceDecoder, binary_mode=False):
         self.size = size
-        self.grn = grn
+        self.gsp = gsp
         self.binary_mode = binary_mode
 
     def create_genes(self):
@@ -24,8 +24,8 @@ class GenePool:
     
     def create_individual(self):
         genes = self.create_genes()
-        return Individual(genes=genes, grn=self.grn)
+        return Individual(genes=genes, gsp=self.gsp)
 
 if __name__ == "__main__":
-    pool = GenePool(100, GeneRegulatoryNetwork(100))
+    pool = GenePool(100, MLPGeneSpaceDecoder(100))
     print(pool.create_individual())

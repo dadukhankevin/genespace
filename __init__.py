@@ -1,5 +1,5 @@
 from .genepool import GenePool
-from .grn import GeneRegulatoryNetwork
+from .decoders import MLPGeneSpaceDecoder, ConvolutionalGeneSpaceDecoder, GRUGeneSpaceDecoder, GeneSpaceDecoderBase
 from .individual import Individual
 from .layers import Layer, NPointCrossover, UniformMutation
 from .environments import Environment
@@ -7,7 +7,7 @@ from .selection import Select, TournamentSelection, RandomSelection, RankBasedSe
 
 __all__ = [
     'GenePool',
-    'GeneRegulatoryNetwork',
+    'MLPGeneSpaceDecoder',
     'Individual',
     'Layer',
     'NPointCrossover',
@@ -16,5 +16,8 @@ __all__ = [
     'Select',
     'TournamentSelection',
     'RandomSelection',
-    'RankBasedSelection'
+    'RankBasedSelection',
+    'ConvolutionalGeneSpaceDecoder',
+    'GRUGeneSpaceDecoder',
+    'GeneSpaceDecoderBase'
 ]
