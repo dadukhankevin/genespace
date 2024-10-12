@@ -44,6 +44,10 @@ class Environment:
         for i in range(0, len(individuals_for_measurement), batch_size):
             batch = individuals_for_measurement[i:i+batch_size]
             batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32).to(self.genepool.grn.device)
+            
+            # Debug print
+
+            
             phenotypes = self.genepool.grn.forward(batch_genes).detach()
             batch_fitnesses = self.pbf_function(phenotypes)
             
