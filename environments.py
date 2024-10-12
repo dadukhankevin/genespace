@@ -73,9 +73,10 @@ class Environment:
                     return self.individuals
             
             # Train the GRN every backprop_every_n generations
-            if i % backprop_every_n == 0:
-                for _ in range(epochs):
-                    loss = self.genepool.grn.backprop_network(self.individuals, mode=backprop_mode)
+            if backprop_mode != 'none':
+                if i % backprop_every_n == 0:
+                    for _ in range(epochs):
+                        loss = self.genepool.grn.backprop_network(self.individuals, mode=backprop_mode)
             
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))
@@ -83,10 +84,10 @@ class Environment:
             print(f"Generation: {i}")
             print("Max fitness: ", float(self.individuals[0].fitness))
             print("Population size: ", len(self.individuals))
-            if i % backprop_every_n == 0:
-                print(f"GRN Training Loss: {loss}\n")
-            else:
-                print()
+            if backprop_mode != 'none': 
+                if i % backprop_every_n == 0:
+                    print(f"GRN Training Loss: {loss}\n")
+         
     
         return self.individuals
     
