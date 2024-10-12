@@ -93,13 +93,15 @@ class Environment:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
 
         # Plot fitness history
-        ax1.plot(self.fitness_history)
+        fitness_history = [f.cpu().numpy() if isinstance(f, torch.Tensor) else f for f in self.fitness_history]
+        ax1.plot(fitness_history)
         ax1.set_title('Fitness History')
         ax1.set_xlabel('Generation')
         ax1.set_ylabel('Max Fitness')
 
         # Plot population history
-        ax2.plot(self.population_history)
+        population_history = [p.cpu().numpy() if isinstance(p, torch.Tensor) else p for p in self.population_history]
+        ax2.plot(population_history)
         ax2.set_title('Population History')
         ax2.set_xlabel('Generation')
         ax2.set_ylabel('Population Size')
