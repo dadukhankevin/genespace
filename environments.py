@@ -45,14 +45,11 @@ class Environment:
             batch = individuals_for_measurement[i:i+batch_size]
             batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32).to(self.genepool.grn.device)
             
-            # Debug print
-
-            
             phenotypes = self.genepool.grn.forward(batch_genes).detach()
             batch_fitnesses = self.pbf_function(phenotypes)
             
             for individual, fitness in zip(batch, batch_fitnesses):
-                individual.fitness = fitness
+                individual.fitness = float(fitness)  # Convert fitness to float
                 individual.modified = False
 
     def sort_individuals(self):
@@ -84,7 +81,7 @@ class Environment:
             self.population_history.append(len(self.individuals))
             
             print(f"Generation: {i}")
-            print("Max fitness: ", self.individuals[0].fitness)
+            print("Max fitness: ", float(self.individuals[0].fitness))
             print("Population size: ", len(self.individuals))
             if i % backprop_every_n == 0:
                 print(f"GRN Training Loss: {loss}\n")
@@ -94,21 +91,6 @@ class Environment:
         return self.individuals
     
     def plot(self):
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
-
-        # Plot fitness history
-        fitness_history = [f.cpu().numpy() if isinstance(f, torch.Tensor) else f for f in self.fitness_history]
-        ax1.plot(fitness_history)
-        ax1.set_title('Fitness History')
-        ax1.set_xlabel('Generation')
-        ax1.set_ylabel('Max Fitness')
-
-        # Plot population history
-        population_history = [p.cpu().numpy() if isinstance(p, torch.Tensor) else p for p in self.population_history]
-        ax2.plot(population_history)
-        ax2.set_title('Population History')
-        ax2.set_xlabel('Generation')
-        ax2.set_ylabel('Population Size')
-
-        plt.tight_layout()
+        plt.plot(self.fitness_history)
         plt.show()
+        
