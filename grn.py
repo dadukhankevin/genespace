@@ -4,7 +4,7 @@ import torch.optim as optim
 import numpy as np
 
 class GeneRegulatoryNetwork(nn.Module):
-    def __init__(self, input_length, hidden_size=64, num_layers=3, output_shape=(10, 5, 3), device='cpu'):
+    def __init__(self, input_length, hidden_size=64, num_layers=3, output_shape=(10, 5, 3), lr=0.001, device='cpu', activation=nn.LeakyReLU, output_activation=nn.Sigmoid):
         super(GeneRegulatoryNetwork, self).__init__()
         
         self.input_length = input_length
@@ -17,11 +17,11 @@ class GeneRegulatoryNetwork(nn.Module):
         self.output_size = torch.prod(torch.tensor(output_shape)).item()
         
         # Input layer
-        layers = [nn.Linear(input_length, hidden_size), nn.ReLU()]
+        layers = [nn.Linear(input_length, hidden_size), activation()]
         
         # Hidden layers
         for _ in range(num_layers - 1):
-            layers.extend([nn.Linear(hidden_size, hidden_size), nn.ReLU()])
+            layers.extend([nn.Linear(hidden_size, hidden_size), activation()])
         
         # Output layer
         layers.append(nn.Linear(hidden_size, self.output_size))
@@ -29,12 +29,12 @@ class GeneRegulatoryNetwork(nn.Module):
         self.mlp = nn.Sequential(*layers)
         
         # Activation function for the output
-        self.output_activation = nn.Sigmoid()
+        self.output_activation = output_activation()
         
         self.to(self.device)  # Ensure the model is on the specified device
         
         # Initialize optimizer and loss function
-        self.optimizer = optim.Adam(self.parameters(), lr=0.001)
+        self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.criterion = nn.MSELoss()
     
     def forward(self, x):
@@ -95,45 +95,6 @@ class GeneRegulatoryNetwork(nn.Module):
             
             # Compute loss
             loss = self.criterion(predictions, top_phenotypes)
-        
-        elif mode == 'weighted':
-            # Assign weights based on fitness rank
-            weights = torch.tensor([ind.fitness for ind in sorted_individuals], dtype=torch.float32).to(self.device)
-            weights = weights / weights.sum()
-            
-            genes = torch.tensor([ind.genes for ind in sorted_individuals], dtype=torch.float32).to(self.device)
-            
-            # Compute phenotypes (detach to prevent gradients)
-            with torch.no_grad():
-                phenotypes = self.forward(genes)
-            phenotypes = phenotypes.view(population_size, -1)
-            
-            # Forward pass
-            predictions = self.forward(genes)
-            predictions = predictions.view(population_size, -1)
-            
-            # Compute weighted loss
-            losses = self.criterion(predictions, phenotypes, reduction='none')
-            losses = losses.mean(dim=1)  # Mean over output dimensions
-            loss = (losses * weights).sum()
-        
-        elif mode == 'direct_prediction':
-            # Train on top individuals to predict their phenotypes from their genes
-            top_half = sorted_individuals[:population_size // 2]
-            
-            genes = torch.tensor([ind.genes for ind in top_half], dtype=torch.float32).to(self.device)
-            
-            # Compute phenotypes (detach to prevent gradients)
-            with torch.no_grad():
-                phenotypes = self.forward(genes)
-            phenotypes = phenotypes.view(len(top_half), -1)
-            
-            # Forward pass
-            predictions = self.forward(genes)
-            predictions = predictions.view(len(top_half), -1)
-            
-            # Compute loss
-            loss = self.criterion(predictions, phenotypes)
         
         else:
             raise ValueError(f"Unknown mode: {mode}")
