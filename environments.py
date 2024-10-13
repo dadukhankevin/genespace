@@ -66,7 +66,7 @@ class Environment:
     def sort_individuals(self):
         self.individuals.sort(key=lambda x: x.fitness, reverse=True)
     
-    def evolve(self, generations=100, backprop_mode: BackpropMode = BackpropMode.GRADIENT_DESCENT, backprop_every_n=1, epochs=1, selection_percent=.5, batch_size=32):
+    def evolve(self, generations=100, backprop_mode: BackpropMode = BackpropMode.GRADIENT_DESCENT, backprop_every_n=1, epochs=1, selection_percent=.5, batch_size=32, n_random_gradients=3):
         assert self.compiled, "Environment must be compiled before evolving"
         self.batch_size = batch_size
         for i in range(generations):
@@ -92,7 +92,7 @@ class Environment:
                         
             elif backprop_mode == BackpropMode.RANDOM_GRADIENT:
                 if i % backprop_every_n == 0:
-                    self.genepool.gsp.apply_random_gradient(self.individuals, n_gradients=1, pbf_function=self.batch_fitness_for_random_gradient, selection_percent=selection_percent, batch_size=self.batch_size)
+                    self.genepool.gsp.apply_random_gradient(self.individuals, n_gradients=n_random_gradients, pbf_function=self.batch_fitness_for_random_gradient, selection_percent=selection_percent, batch_size=self.batch_size)
             
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))
