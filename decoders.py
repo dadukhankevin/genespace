@@ -21,9 +21,12 @@ class GeneSpaceDecoderBase(nn.Module):
         
         self.to(self.device)  # Ensure the model is on the specified device
         
-        # Initialize optimizer and loss function
-        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        # Initialize loss function
         self.criterion = nn.MSELoss()
+    
+    def initialize_optimizer(self):
+        # Initialize optimizer
+        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
     
     def forward(self, x):
         raise NotImplementedError("Subclasses should implement this method.")
@@ -91,6 +94,7 @@ class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
         self.output_activation = output_activation()
         
         self.to(self.device)  # Ensure the model is on the specified device
+        self.initialize_optimizer()  # Initialize the optimizer after the model is defined
     
     def forward(self, x):
         # x shape: (batch_size, input_length)
@@ -127,6 +131,7 @@ class GRUGeneSpaceDecoder(GeneSpaceDecoderBase):
         self.output_activation = output_activation()
         
         self.to(self.device)  # Ensure the model is on the specified device
+        self.initialize_optimizer()  # Initialize the optimizer after the model is defined
     
     def forward(self, x):
         # x shape: (batch_size, input_length)
@@ -180,6 +185,7 @@ class ConvolutionalGeneSpaceDecoder(GeneSpaceDecoderBase):
         )
         
         self.to(self.device)
+        self.initialize_optimizer()  # Initialize the optimizer after the model is defined
     
     def forward(self, x):
         # x shape: (batch_size, input_length)
