@@ -57,7 +57,7 @@ class Environment:
     def sort_individuals(self):
         self.individuals.sort(key=lambda x: x.fitness, reverse=True)
     
-    def evolve(self, generations=100, backprop_mode='divide_and_conquer', backprop_every_n=1, epochs=1, train_top_percent=.5):
+    def evolve(self, generations=100, backprop_mode='divide_and_conquer', backprop_every_n=1, epochs=1, selection_percent=.5):
         assert self.compiled, "Environment must be compiled before evolving"
 
         for i in range(generations):
@@ -78,7 +78,7 @@ class Environment:
             if backprop_mode != 'none':
                 if i % backprop_every_n == 0:
                     for _ in range(epochs):
-                        loss = self.genepool.gsp.backprop_network(self.individuals, train_top_percent=train_top_percent, batch_size=self.batch_size)
+                        loss = self.genepool.gsp.backprop_network(self.individuals, selection_percent=selection_percent, batch_size=self.batch_size)
             
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))
