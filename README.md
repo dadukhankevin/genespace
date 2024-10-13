@@ -1,357 +1,78 @@
 # GeneSpace
 
-GeneSpace is a new experimental framework that unifies Genetic Algorithms (GAs) and Neural Networks by leveraging Neural Networks as Gene Regulatory Networks (GRNs).
+GeneSpace is a genetic algorithm framework that aims to take the best concepts from *actual evolution* and bring them to the field of evolutionary computation.
 
- This integration allows for the evolution of genotypes into complex phenotypes, enabling sophisticated mappings and optimizations. GeneSpace facilitates the co-evolution of genetic representations and their corresponding neural network decoders, enhancing the adaptability and efficiency of evolutionary processes.
+## Installation
 
-
-#### Key point: Until now GAs have opperated by directly evolving phenotypes (e.g. images, audio, etc.). This framework allows for the evolution of genotypes (i.e. the genetic code itself), which can be decoded into phenotypes by a neural network. This is much more similar to biology!
-
-I'm super excited about this. We are close to artificial general intelligence, now that every 'individual' can be creating useing the same genetic code (aka genespace). 
-
-
-## Table of Contents
-
-- [Features](#features)
-- [Architecture](#architecture)
-  - [Classes](#classes)
-    - [GeneRegulatoryNetwork](#gene_regulatory_network)
-    - [Individual](#individual)
-    - [GenePool](#genepool)
-    - [Layer](#layer)
-      - [NPointCrossover](#npointcrossover)
-      - [UniformMutation](#uniformmutation)
-    - [Selection Strategies](#selection-strategies)
-      - [RandomSelection](#randomselection)
-      - [TournamentSelection](#tournamentselection)
-      - [RankBasedSelection](#rankbasedselection)
-    - [Environment](#environment)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Usage](#usage)
-- [Example Projects](#example-projects)
-  - [Example](#evolving-image-like-phenotypes) Better examples are coming!
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
-
-## Features
-
-- **Unified Framework**: Allows for advanced genotype-to-phenotype mappings. Introduces many -> many relationships where multiple genotypes can map to the same phenotype and vice versa. 
-- **Modular Design**: Well-structured classes and layers help with easy extension and experimentation. It is based on my previous project Finch, but with many improvements and much more experimental.
-- **Flexible Selection and Genetic Operators**: Supports various selection strategies and genetic operations.
-- **Simpler**: Now that all genetic algorithms can be represnted using the same genespace (sequences of floats between 0 and 1), we can use the same genetic operators for all GAs.
-- **Backpropagation Integration**: Incorporates gradient-based optimization to train the GRN alongside the evolutionary process, fostering co-evolution of genes and their decoders. Individuals increasingly produce better and better phenotypes while the GRN becomes more and more adept at decoding the same individuals.
-- **Batch Processing**: Efficiently handles large populations through batch processing, optimizing computational resources. NVIDIA is going to love this (:
-
-## Architecture
-
-GeneSpace is composed of several interrelated classes that manage different aspects of the evolutionary process. Below is an overview of the core components.
-
-### Classes
-
-#### GeneRegulatoryNetwork
-
-**File**: `grn.py`
-
-The `GeneRegulatoryNetwork` class extends PyTorch's `nn.Module` and serves as the neural network that maps genotypes to phenotypes. It encapsulates the neural network architecture, training mechanisms, and backpropagation logic.
-
-**Key Features**:
-
-- **Customizable Architecture**: Configurable input length, hidden sizes, number of layers, and output shapes. (Basic MLP, I suspect this is all we need.)
-- **Device Management**: Supports CPU, GPU.
-- **Backpropagation Modes**: Implements multiple training strategies (`divide_and_conquer`, `weighted`, `direct_prediction`) to train the GRN based on the population's fitness. I'm not sure whcih is best yet, but I suspect divide_and_conquer better overall, and ensures genetic diversity.
-- **Optimizer and Loss Function**: Incorporates optimizers (e.g., Adam) and loss functions (e.g., Mean Squared Error) for training.
-
-**Methods**:
-
-- `forward(x)`: Processes input genotypes through the neural network to produce phenotypes.
-- `backprop_network(individuals, target_image, mode)`: Trains the GRN based on the specified mode using the current population of individuals.
-
-#### Individual
-
-**File**: `individual.py`
-
-Represents an individual in the population, encapsulating its genotype, fitness score, and modification status.
-
-**Attributes**:
-
-- `genes`: NumPy array representing the genotype.
-- `fitness`: Float value indicating the individual's fitness.
-- `modified`: Boolean flag indicating if the individual has been modified since the last fitness evaluation.
-
-**Methods**:
-
-- **None**: The class primarily serves as a data container without callable methods to maintain batch processing capabilities.
-
-#### GenePool
-
-**File**: `genepool.py`
-
-Manages the creation and handling of individuals within the population.
-
-**Key Features**:
-
-- **Gene Initialization**: Supports both binary and real-valued gene representations.
-- **Individual Creation**: Generates new individuals with randomized genes.
-
-**Methods**:
-
-- `create_genes()`: Generates a new gene sequence.
-- `generate_one_gene()`: Generates a single gene value.
-- `create_individual()`: Instantiates a new `Individual` with generated genes.
-
-#### Layer
-
-**File**: `layers.py`
-
-Abstract base class for genetic operators that manipulate the population through crossover and mutation.
-
-**Subclasses**:
-
-##### NPointCrossover
-
-**File**: `layers.py`
-
-Performs N-point crossover between selected parents to produce offspring.
-
-**Parameters**:
-
-- `selection_function`: Callable to select parent individuals.
-- `families`: Number of parent pairs to process.
-- `children`: Number of offspring per parent pair.
-- `n_points`: Number of crossover points.
-- `device`: Computation device (`cpu` or `gpu`).
-
-**Methods**:
-
-- `execute()`: Executes the crossover operation and returns new offspring individuals.
-
-##### UniformMutation
-
-**File**: `layers.py`
-
-Applies uniform mutation to selected individuals by adding random noise.
-
-**Parameters**:
-
-- `selection_function`: Callable to select individuals for mutation.
-- `device`: Computation device (`cpu` or `gpu`).
-- `magnitude`: Magnitude of the mutation noise.
-
-**Methods**:
-
-- `execute()`: Executes the mutation operation and returns mutated individuals.
-
-#### Selection Strategies
-
-**File**: `selection.py`
-
-Implements various selection strategies to choose individuals for reproduction and mutation.
-
-##### RandomSelection
-
-**File**: `selection.py`
-
-Selects individuals randomly from the population.
-
-**Parameters**:
-
-- `percent_to_select`: Callable returning the percentage of individuals to select.
-- `amount_to_select`: Callable returning the number of individuals to select.
-
-**Methods**:
-
-- `select(individuals)`: Returns a list of randomly selected individuals.
-
-##### TournamentSelection
-
-**File**: `selection.py`
-
-Selects individuals based on tournament selection, favoring higher fitness.
-
-**Parameters**:
-
-- `percent_to_select`: Callable returning the percentage of individuals to select.
-- `amount_to_select`: Callable returning the number of individuals to select.
-
-**Methods**:
-
-- `select(individuals)`: Returns a list of selected individuals through tournament selection.
-
-##### RankBasedSelection
-
-**File**: `selection.py`
-
-Selects individuals based on their rank, applying a selection pressure factor.
-
-**Parameters**:
-
-- `factor`: Selection pressure factor.
-- `percent_to_select`: Callable returning the percentage of individuals to select.
-- `amount_to_select`: Callable returning the number of individuals to select.
-
-**Methods**:
-
-- `select(individuals)`: Returns a list of selected individuals based on rank-based probabilities.
-
-#### Environment
-
-**File**: `environments.py`
-
-Manages the evolutionary process, integrating genetic operators, fitness evaluations, and training of the GRN.
-
-**Key Features**:
-
-- **Layer Integration**: Incorporates genetic operators (layers) to manipulate the population.
-- **Fitness Evaluation**: Calculates fitness scores using batch processing for efficiency.
-- **GRN Training**: Invokes the GRN's backpropagation method to train the network based on the current population.
-- **Evolution Loop**: Handles the main evolutionary loop over specified generations.
-- **Visualization**: Provides plotting capabilities to visualize fitness and population trends.
-
-**Methods**:
-
-- `compile(start_population, max_individuals, batch_size, individuals, early_stop)`: Initializes the environment with population parameters.
-- `batch_fitness()`: Evaluates the fitness of modified individuals in batches.
-- `sort_individuals()`: Sorts individuals based on fitness.
-- `evolve(generations, backprop_mode)`: Executes the evolutionary process over a number of generations.
-- `plot()`: Visualizes the fitness and population history.
-
-## Getting Started
-
-Follow these instructions to set up and run the GeneSpace project on your local machine.
-
-### Prerequisites
-
-Ensure you have the following installed:
-
-- **Python 3.7+**
-- **pip** (Python package installer)
-
-### Installation
-
-1. **Clone the Repository**
-
-   ```bash
-   git clone https://github.com/yourusername/genespace.git
-   cd genespace
-   ```
-
-2. **Create a Virtual Environment (Optional but Recommended)**
-
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install Dependencies**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   **Note**: If `requirements.txt` is not provided (its not yet lol), install the necessary packages manually:
-
-   ```bash
-   pip install torch numpy pillow matplotlib
-   ```
-etc..
-### Usage
-
-GeneSpace can be utilized to evolve populations for various tasks. Below is a simple example. Colab notebooks will be added soon.
-
-#### Running the Image Evolution Example
-
-1. **Prepare the Project Structure**
-
-   Ensure that all classes and utility functions are correctly placed in their respective files:
-
-   ```
-   genespace/
-   ├── grn.py
-   ├── individual.py
-   ├── genepool.py
-   ├── layers.py
-   ├── selection.py
-   ├── environments.py
-   ├── fitness.py
-   ├── utils.py
-   ├── example.py
-   └── README.md (you are here haha)
-   ```
-
-2. **Execute the Example Script**
-
-   ```bash
-   python example.py
-   ```
-
-   **What Happens**:
-
-   - Creates a population of individuals with random genes.
-   - Evaluates the fitness of each individual.
-   - Creates a gene regulatory network and trains it on the population.
-   - Evolves the population over 100 generations.
-   - Visualizes the fitness and population history.
-   - Maximizes the sum of the phenotypes.
-
-
-## Project Structure
-
+```bash
+git clone https://github.com/dadukhankevin/genespace
 ```
-genespace/
-├── grn.py                # GeneRegulatoryNetwork class
-├── individual.py         # Individual class
-├── genepool.py           # GenePool class
-├── layers.py             # Genetic operators (crossover, mutation)
-├── selection.py          # Selection strategies
-├── environments.py       # Environment class managing evolution
-├── fitness.py            # Fitness functions
-├── example.py            # Example script for evolving larger sum arrays. Super simple rn...
-├── requirements.txt      # Project dependencies
-└── README.md             # Project documentation
-```
+
+## About
+
+### Background: Phenotypes vs Genotypes
+I'm no expert in biology, but as you likely remember from 7th grade science, our existence can be explained in two ways:
+
+- our geneotype (our DNA)
+- our phenotype (our observable traits)
+
+
+Interestingly, in biology, multiple genotypes can lead to the same phenotype. This leads to interesting concepts
+like convergent evolution, where two different species evolve similar traits in response to similar environmental pressures -- even with completely different underlying DNA (genotypes).
+
+On the other hand, sometimes the same genotype (DNA) can lead to different phenotypes (observable traits). This hints that there are some evolvable traits that are not encoded in our DNA (genotype), but are instead encoded in some other (possibly non-genetic) format. In biology, one of these is called *epigenetics*, which involves changes in gene expression without altering the DNA sequence itself. 
+
+### The Problem with Evolutionary Algorithms
+
+The difference between genotypes and phenotypes is a fundamental to how biology works, and how evolution works in biology. Imagine if DNA and our observable traits had a 1-1 relationship. It would mean every cell in our body would need DNA telling it precisely where to be specifically, what atoms it requires, etc.. Instead, we see that this is not the case. DNA is a highly compressed format for information, and our phenotypes are a result of this compressed information being *expressed/interpreted* in a specific way.
+
+In *genetic algorithms* we are almost always directly evolving the phenotypes of our solutions. This leads to a *lot* of problems, in my humble opinion these include:
+
+
+- **Highly specific genetic algorithms**: Since every genetic algorithm works by directly evolving observable traits (phenotypes), it means there can be no *universal genetic code* like we have in biology (DNA). Each algorithm must then be specifically designed for each task, and there can be no sharing of genetic material between algorithms where the focus may be on different modalities.
+
+- **Inefficiency**: Since we are only evolving the phenotypes of our solutions, we are greatly limited by the size of our phenotypes, and so we must keep our populations low (I know this from experience). 
+
+- **Complex Search Spaces**: In typical GAs, our search space is so wide that we must explore it very slowly. A single mutation usually results in a very small incremental change to our solution. In true language based evolution, we see that a single mutation can actually have large changes to the phenotype. This also means that crossover, in many ways, is more like combining ideas rather than combining phenotypes. 
+
+### How GeneSpace Solves These Problems
+
+This project is brand new, but it is heavily based on Finch, a framework I have built over the past several years. While building it, I learned a lot about GAs and their limitations. My hope is that GeneSpace will build apon what I learned while building Finch, but also be a much more powerful, geneneral, *linguistic* framework for artificial evolution. 
+
+So here's GeneSpace:
+
+#### Universal Genotype.
+In DNA, everything is represented as a sequence of *A* *T* *C* *G*. In GeneSpace, we represent everything as a sequence of floats between *0* and *1* (or optionally binary). It is good to mimic the ideas behind biology, but not necessarily the implementation itself. We learned this lesson especially with Deep Learning.
+
+#### GeneSpace Decoders
+
+If we use a genotype of binary floats, how do we decode it into a phenotype? We use a decoder. What better decoder exists than a neural network? (I almost called these gene regulatory networks, which are a thing in biology).
+
+We will call these decoders *GeneSpaceDecoders* (*/decoders.py*). They are neural networks that take a genotype and decode it into a phenotype. As the genetic algorithm is evolving these sequences of floats, we can use these decoders to generate a phenotype of any size or shape. Since MLPs (Multilayer Perceptrons) are known as *universal function approximators*, we can use them to approximate any function, including our decoders.
+
+This means that over time, our GA will evolve genotypes that best decode into phenotypes, all while our *genespace* is learning to get better at producing the phenotypes from the genotypes. We can do this using two different techniques implemented in our @decoders.py:
+
+1. Backpropagation: The `backprop_network` method in our `GeneSpaceDecoderBase` class allows us to train the decoder network using the top-performing individuals as targets for the lower-performing ones. This helps the decoder learn to map genotypes to successful phenotypes. It also encourages genetic diversity.
+
+2. Random Gradient Application (my favorite): The `apply_random_gradient` method generates random gradients, applies them to the network, and keeps the one that produces the best fitness improvement. This introduces controlled randomness into the learning process, potentially helping to escape local optima.
+
+These techniques allow our GeneSpace to adaptively evolve the mapping between genotypes and phenotypes, creating a more flexible and powerful (co) evolutionary system. Going forward I want to move away from backpropagation as much as possible.
+
+I have also been inspired by Stephen Wolfram's posts about "mining the mathematical universe* and as such these algorithms focus on creating *genespace*(s) that just *happen* to work, and genes that just *happen* to exploit these neural networks appropriately. Without rhyme or reason really. I learned this could work when I discovered that genetic algorithms could *just so happen* to evolve prompts/images that trick the best image generation/recognition models into producing almost any desired output. This whole project is building on that discovery. 
+
+## Current State
+
+This project is still in its infancy. I will post examples, colab notebooks, etc.. in the coming weeks. 
 
 ## Contributing
-Contributions are welcome! If you have suggestions, improvements, or bug fixes, feel free to open an issue or submit a pull request.
 
-1. **Fork the Repository**
+I am new to open source, and I am learning as I go. If you have any ideas, please let me know! I would love to collaborate. 
 
-2. **Create a Feature Branch**
 
-   ```bash
-   git checkout -b feature/YourFeature
-   ```
+## The Future
 
-3. **Commit Your Changes**
-
-   ```bash
-   git commit -m "Add Your Feature"
-   ```
-
-4. **Push to the Branch**
-
-   ```bash
-   git push origin feature/YourFeature
-   ```
-
-5. **Open a Pull Request**
+Genetic algorithms that can evolve any arbitrary solution, with a universal -shareable- genetic code. A universal general genetic algorithm applicable to any problem. I hope this project will be a good step toward that goal. 
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). But if you use it for something big, let me know so I can buy you a coffee! Also some credit is always nice (:
-
-## Acknowledgements
-
-- **PyTorch**: For providing a robust neural network framework.
-- **NumPy**: For efficient numerical computations.
-- **Pillow**: For image processing capabilities.
-- **Matplotlib**: For visualization tools.
-- **Requests**: For handling HTTP requests to download images.
-- **Finch**: My previous project that this is heavily based on. Check it out!
-- **X/Twitter**: For everyone who has followed me on this journey. It means a lot. Especially those who have offered encouragement, advice, or criticism.
-- **Everyone**: For all the hard work that has gone into the fields of evolutionary algorithms, genetic programming, and neural networks. It's an blast to build in this field.
-
-Happy evolving!
+This project is licensed under the MIT License. See the LICENSE file for more details. But I would appreciate it if you could give me a shout if you end up using this in a project!
