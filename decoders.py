@@ -31,16 +31,16 @@ class GeneSpaceDecoderBase(nn.Module):
     def forward(self, x):
         raise NotImplementedError("Subclasses should implement this method.")
     
-    def backprop_network(self, individuals, train_top_percent=1.0):
+    def backprop_network(self, individuals, train_top_percent=1.0, batch_size=32):
         """
-        Trains the decoder based on the top percentage of individuals.
+        Trains the decoder based on the top percentage of individuals using batches.
         
         Parameters:
         - individuals: List of Individuals in the current population.
         - train_top_percent (float): Percentage (0.0 to 1.0) of top individuals to use for training.
+        - batch_size (int): Number of individuals to process in each batch.
         """
         self.train()
-        self.optimizer.zero_grad()
         
         # Sort individuals based on fitness (descending order)
         sorted_individuals = sorted(individuals, key=lambda ind: ind.fitness, reverse=True)
@@ -54,22 +54,33 @@ class GeneSpaceDecoderBase(nn.Module):
         num_top_individuals = max(1, int(population_size * train_top_percent))
         top_individuals = sorted_individuals[:num_top_individuals]
         
-        # Prepare training data: X (genotypes) and Y (phenotypes)
+        # Prepare training data: X (genotypes)
         X = torch.tensor([ind.genes for ind in top_individuals], dtype=torch.float32).to(self.device)
-        Y = torch.tensor([ind.phenotype for ind in top_individuals], dtype=torch.float32).to(self.device)
         
-        # Forward pass
-        predictions = self.forward(X).view(len(top_individuals), -1)
-        targets = Y.view(len(top_individuals), -1)
+        total_loss = 0
+        num_batches = (len(X) + batch_size - 1) // batch_size  # Ceiling division
         
-        # Compute loss
-        loss = self.criterion(predictions, targets)
+        for i in range(num_batches):
+            self.optimizer.zero_grad()
+            
+            # Get batch
+            start_idx = i * batch_size
+            end_idx = min((i + 1) * batch_size, len(X))
+            batch_X = X[start_idx:end_idx]
+            
+            # Forward pass to get phenotypes
+            Y = self.forward(batch_X)
+            
+            # Compute loss (using the phenotypes as both predictions and targets)
+            loss = self.criterion(Y, Y.detach())
+            
+            # Backward pass and optimization
+            loss.backward()
+            self.optimizer.step()
+            
+            total_loss += loss.item()
         
-        # Backward pass and optimization
-        loss.backward()
-        self.optimizer.step()
-        
-        return loss.item()
+        return total_loss / num_batches
 
 class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
     def __init__(self, input_length, hidden_size=64, num_layers=3, output_shape=(10,), lr=0.001, device='cpu', activation=nn.LeakyReLU, output_activation=nn.Sigmoid):

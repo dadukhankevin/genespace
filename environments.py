@@ -78,7 +78,7 @@ class Environment:
             if backprop_mode != 'none':
                 if i % backprop_every_n == 0:
                     for _ in range(epochs):
-                        loss = self.genepool.gsp.backprop_network(self.individuals, train_top_percent=train_top_percent)
+                        loss = self.genepool.gsp.backprop_network(self.individuals, train_top_percent=train_top_percent, batch_size=self.batch_size)
             
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))
