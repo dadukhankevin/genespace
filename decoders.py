@@ -31,13 +31,14 @@ class GeneSpaceDecoderBase(nn.Module):
     def forward(self, x):
         raise NotImplementedError("Subclasses should implement this method.")
     
-    def backprop_network(self, individuals, train_top_percent=1.0, batch_size=32):
+    def backprop_network(self, individuals, train_top_percent=0.5, batch_size=32):
         """
-        Trains the decoder based on the top percentage of individuals using batches.
+        Trains the decoder using the genes of less fit individuals as input
+        and the phenotypes of top individuals as target.
         
         Parameters:
         - individuals: List of Individuals in the current population.
-        - train_top_percent (float): Percentage (0.0 to 1.0) of top individuals to use for training.
+        - train_top_percent (float): Percentage (0.0 to 1.0) of top individuals to use for target phenotypes.
         - batch_size (int): Number of individuals to process in each batch.
         """
         self.train()
@@ -46,16 +47,19 @@ class GeneSpaceDecoderBase(nn.Module):
         sorted_individuals = sorted(individuals, key=lambda ind: ind.fitness, reverse=True)
         population_size = len(sorted_individuals)
         
-        if population_size < 1:
-            print("No individuals available for training.")
+        if population_size < 2:
+            print("Not enough individuals available for training.")
             return
         
-        # Determine the number of top individuals to use
-        num_top_individuals = max(1, int(population_size * train_top_percent))
-        top_individuals = sorted_individuals[:num_top_individuals]
+        # Determine the split point for top and bottom individuals
+        split_index = max(1, int(population_size * train_top_percent))
         
-        # Prepare training data: X (genotypes)
-        X = torch.tensor([ind.genes for ind in top_individuals], dtype=torch.float32).to(self.device)
+        # Prepare training data
+        top_individuals = sorted_individuals[:split_index]
+        bottom_individuals = sorted_individuals[split_index:]
+        
+        # X (genes of less fit individuals)
+        X = torch.tensor([ind.genes for ind in bottom_individuals], dtype=torch.float32).to(self.device)
         
         total_loss = 0
         num_batches = (len(X) + batch_size - 1) // batch_size  # Ceiling division
@@ -63,16 +67,24 @@ class GeneSpaceDecoderBase(nn.Module):
         for i in range(num_batches):
             self.optimizer.zero_grad()
             
-            # Get batch
+            # Get batch for X
             start_idx = i * batch_size
             end_idx = min((i + 1) * batch_size, len(X))
             batch_X = X[start_idx:end_idx]
             
-            # Forward pass to get phenotypes
-            Y = self.forward(batch_X)
+            # Get batch for Y (phenotypes of top individuals)
+            start_idx_Y = (i * batch_size) % len(top_individuals)
+            end_idx_Y = min(start_idx_Y + batch_size, len(top_individuals))
+            batch_top_individuals = top_individuals[start_idx_Y:end_idx_Y]
             
-            # Compute loss (using the phenotypes as both predictions and targets)
-            loss = self.criterion(Y, Y.detach())
+            # Forward pass for Y
+            batch_Y = torch.cat([self.forward(torch.tensor(ind.genes, dtype=torch.float32).unsqueeze(0).to(self.device)) for ind in batch_top_individuals])
+            
+            # Forward pass for X
+            predictions = self.forward(batch_X)
+            
+            # Compute loss
+            loss = self.criterion(predictions, batch_Y)
             
             # Backward pass and optimization
             loss.backward()
