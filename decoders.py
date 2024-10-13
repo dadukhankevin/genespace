@@ -83,6 +83,11 @@ class GeneSpaceDecoderBase(nn.Module):
             # Forward pass for X
             predictions = self.forward(batch_X)
             
+            # Ensure predictions and batch_Y have the same size
+            min_size = min(predictions.size(0), batch_Y.size(0))
+            predictions = predictions[:min_size]
+            batch_Y = batch_Y[:min_size]
+            
             # Compute loss
             loss = self.criterion(predictions, batch_Y)
             
