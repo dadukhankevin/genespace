@@ -6,6 +6,12 @@ from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import enum
+
+class BackpropMode(enum.Enum):
+    NONE = 1
+    RANDOM_GRADIENT = 2
+    GRADIENT_DESCENT = 3
 
 class Environment:
     def __init__(self, layers: list[Layer], genepool: GenePool, pbf_function: Callable):
@@ -21,17 +27,16 @@ class Environment:
         self.fitness_history: list[float] = []
         self.population_history: list[int] = []
     
-    def compile(self, start_population: int, max_individuals: int, batch_size: int = 10, individuals: list[Individual] = [], early_stop: float = float('inf')):
+    def compile(self, start_population: int, max_individuals: int, individuals: list[Individual] = [], early_stop: float = float('inf')):
         assert start_population >= 2, "Start population must be at least 2"
 
         self.individuals = individuals
         self.start_population = start_population
         self.max_individuals = max_individuals
         self.early_stop = early_stop
-        self.batch_size = batch_size
         self.compiled = True
-        self.fitness_history: list[float] = []
-        self.population_history: list[int] = []
+        self.fitness_history = []
+        self.population_history = []
 
         for layer in self.layers:
             layer.initialize(self)
@@ -53,13 +58,17 @@ class Environment:
             for individual, fitness in zip(batch, batch_fitnesses):
                 individual.fitness = float(fitness)  # Convert fitness to float
                 individual.modified = False
-
+    
+    def batch_fitness_for_random_gradient(self, phenotypes):
+        batch_fitnesses = self.pbf_function(phenotypes.detach())
+        return batch_fitnesses
+    
     def sort_individuals(self):
         self.individuals.sort(key=lambda x: x.fitness, reverse=True)
     
-    def evolve(self, generations=100, backprop_mode='divide_and_conquer', backprop_every_n=1, epochs=1, selection_percent=.5):
+    def evolve(self, generations=100, backprop_mode: BackpropMode = BackpropMode.GRADIENT_DESCENT, backprop_every_n=1, epochs=1, selection_percent=.5, batch_size=32):
         assert self.compiled, "Environment must be compiled before evolving"
-
+        self.batch_size = batch_size
         for i in range(generations):
             for layer in self.layers:
                 while len(self.individuals) < self.start_population:
@@ -75,10 +84,15 @@ class Environment:
                     return self.individuals
             
             # Train the GRN every backprop_every_n generations
-            if backprop_mode != 'none':
+            if backprop_mode == BackpropMode.GRADIENT_DESCENT:
                 if i % backprop_every_n == 0:
                     for _ in range(epochs):
                         loss = self.genepool.gsp.backprop_network(self.individuals, selection_percent=selection_percent, batch_size=self.batch_size)
+                        print(f"Loss: {loss}")
+                        
+            elif backprop_mode == BackpropMode.RANDOM_GRADIENT:
+                if i % backprop_every_n == 0:
+                    self.genepool.gsp.apply_random_gradient(self.individuals, n_gradients=1, pbf_function=self.batch_fitness_for_random_gradient, selection_percent=selection_percent, batch_size=self.batch_size)
             
             self.fitness_history.append(self.individuals[0].fitness)
             self.population_history.append(len(self.individuals))
@@ -86,9 +100,7 @@ class Environment:
             print(f"Generation: {i}")
             print("Max fitness: ", float(self.individuals[0].fitness))
             print("Population size: ", len(self.individuals))
-            if backprop_mode != 'none': 
-                if i % backprop_every_n == 0:
-                    print(f"GRN Training Loss: {loss}\n")
+     
          
     
         return self.individuals

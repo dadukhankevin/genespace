@@ -65,7 +65,61 @@ class GeneSpaceDecoderBase(nn.Module):
         
         average_loss = total_loss / len(bottom_batches)
         return average_loss
+
+    def apply_random_gradient(self, individuals, n_gradients, pbf_function, selection_percent=0.5, batch_size=32):
+        # Sample generate n_gradients to apply to the network
+        gradients = []
+        for _ in range(n_gradients):
+            gradient = {}
+            for name, param in self.named_parameters():
+                gradient[name] = torch.randn_like(param) * self.lr
+            gradients.append(gradient)
+
+        # Select the correct amount of individuals using the selection_percent
+        num_selected = int(len(individuals) * selection_percent)
+        selected_individuals = individuals[:num_selected]
+
+        # Generate phenotypes once, outside the loop
+        genes = torch.tensor([ind.genes for ind in selected_individuals], dtype=torch.float32).to(self.device)
+
+        # Test each gradient
+        original_state_dict = self.state_dict()
+        best_gradient = None
+        best_fitness = float('-inf')
+
+        for gradient in gradients:
+            # Apply gradient
+            for name, param in self.named_parameters():
+                param.data += gradient[name]
+
+            # Generate phenotypes in batches
+            phenotypes = []
+            for i in range(0, len(genes), batch_size):
+                batch = genes[i:i+batch_size]
+                phenotypes.append(self.forward(batch))
+            phenotypes = torch.cat(phenotypes, dim=0)
+
+            # Test fitness
+            fitnesses = pbf_function(phenotypes)
+            avg_fitness = np.mean(fitnesses)
+
+            if avg_fitness > best_fitness:
+                best_fitness = avg_fitness
+                best_gradient = gradient
+
+            # Restore original network state
+            self.load_state_dict(original_state_dict)
+
+        # Apply the best gradient if it improves fitness
+        if best_gradient is not None:
+            current_fitness = np.mean(pbf_function(self.forward(genes)))
+            if best_fitness >= current_fitness:
+                for name, param in self.named_parameters():
+                    param.data += best_gradient[name]
+                return best_fitness
         
+        return None  # Return None if no gradient improved fitness
+
 class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
     def __init__(self, input_length, hidden_size=64, num_layers=3, output_shape=(10,), lr=0.001, device='cpu', activation=nn.LeakyReLU, output_activation=nn.Sigmoid):
         super(MLPGeneSpaceDecoder, self).__init__(input_length, output_shape, lr, device)
