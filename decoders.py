@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from perlin_noise import PerlinNoise  # You might need to install this: pip install perlin-noise
 
 class GeneSpaceDecoderBase(nn.Module):
     def __init__(self, input_length, output_shape=(10,), lr=0.001, device='cpu'):
@@ -121,14 +120,6 @@ class GeneSpaceDecoderBase(nn.Module):
         
         return None  # Return None if no gradient improved fitness
 
-    def initialize_weights_perlin(self, scale=0.1, octaves=6, seed=None):
-        for name, param in self.named_parameters():
-            if 'weight' in name:
-                perlin_weights = perlin_noise_tensor(param.shape, scale, octaves, seed)
-                param.data = perlin_weights.to(param.device).type(param.dtype)
-            elif 'bias' in name:
-                nn.init.constant_(param, 0.0)
-
 class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
     def __init__(self, input_length, hidden_size=64, num_layers=3, output_shape=(10,), lr=0.001, device='cpu', activation=nn.LeakyReLU, output_activation=nn.Sigmoid):
         super(MLPGeneSpaceDecoder, self).__init__(input_length, output_shape, lr, device)
@@ -151,7 +142,6 @@ class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
         # Activation function for the output
         self.output_activation = output_activation()
         
-        self.initialize_weights_perlin()  # Initialize weights with Perlin noise
         self.initialize_optimizer()  # Initialize the optimizer after the model is defined
     
     def forward(self, x):
@@ -188,7 +178,6 @@ class GRUGeneSpaceDecoder(GeneSpaceDecoderBase):
         # Activation function for the output
         self.output_activation = output_activation()
         
-        self.initialize_weights_perlin()  # Initialize weights with Perlin noise
         self.initialize_optimizer()  # Initialize the optimizer after the model is defined
     
     def forward(self, x):
@@ -220,19 +209,3 @@ class GRUGeneSpaceDecoder(GeneSpaceDecoderBase):
         out = out.view(-1, *self.output_shape)
         
         return out
-
-def perlin_noise_tensor(shape, scale=0.1, octaves=6, seed=None):
-    if seed is not None:
-        np.random.seed(seed)
-    
-    noise = PerlinNoise(octaves=octaves, seed=seed)
-    
-    if len(shape) == 1:
-        return torch.tensor([noise([i*scale]) for i in range(shape[0])])
-    elif len(shape) == 2:
-        return torch.tensor([[noise([i*scale, j*scale]) for j in range(shape[1])] for i in range(shape[0])])
-    elif len(shape) == 3:
-        return torch.tensor([[[noise([i*scale, j*scale, k*scale]) for k in range(shape[2])] 
-                              for j in range(shape[1])] for i in range(shape[0])])
-    else:
-        raise ValueError("Unsupported tensor shape. Only 1D, 2D, and 3D tensors are supported.")
