@@ -1,5 +1,5 @@
 from .genepool import GenePool
-from .decoders import MLPGeneSpaceDecoder, ConvolutionalGeneSpaceDecoder, GRUGeneSpaceDecoder, GeneSpaceDecoderBase
+from .decoders import MLPGeneSpaceDecoder, GRUGeneSpaceDecoder, GeneSpaceDecoderBase
 from .individual import Individual
 from .layers import Layer, NPointCrossover, UniformMutation
 from .environments import Environment
