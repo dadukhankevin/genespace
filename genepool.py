@@ -12,13 +12,13 @@ class GenePool:
 
     def create_genes(self):
         if self.binary_mode:
-            return np.random.randint(0, 2, self.size).astype(np.float32)
+            return np.random.randint(0, 2, self.size).astype(np.int8)
         else:
             return np.random.randn(self.size).astype(np.float32)
     
     def generate_one_gene(self):
         if self.binary_mode:
-            return np.random.randint(0, 2, 1).astype(np.float32)
+            return np.random.randint(0, 2, 1).astype(np.int8)
         else:
             return np.random.randn(1).astype(np.float32)
     
