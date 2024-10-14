@@ -217,6 +217,10 @@ class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
         # Activation function for the output
         self.output_activation = output_activation()
         
+        # Move the model to the specified device
+        self.model = self.model.to(self.device)
+        self.output_activation = self.output_activation.to(self.device)
+        
         self.initialize_optimizer()  # Initialize the optimizer after the model is defined
     
     def forward(self, x):
@@ -226,6 +230,7 @@ class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
         elif isinstance(x, list):
             x = torch.tensor(x).float()
         
+        # Ensure x is on the correct device
         x = x.to(self.device)
         
         # Process through MLP
