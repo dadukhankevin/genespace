@@ -65,7 +65,7 @@ This project is still in its infancy. I will post examples, colab notebooks, etc
 
 ## Contributing
 
-I am new to open source, and I am learning as I go. If you have any ideas, please let me know! I would love to collaborate. 
+Please contribute! You can contact me on X/Twitter [@DanielJLosey](https://x.com/DanielJLosey).
 
 
 ## The Future
