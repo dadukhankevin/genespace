@@ -25,8 +25,6 @@ class GeneSpaceDecoderBase(nn.Module):
         # Placeholder for the model, to be defined in subclasses
         self.model = None
         
-        self.to(self.device)  # Ensure the model is on the specified device
-        
         # Initialize loss function
         self.criterion = nn.MSELoss()
 
@@ -66,12 +64,12 @@ class GeneSpaceDecoderBase(nn.Module):
         
         top_phenotypes = []
         for top_batch in top_batches:
-            top_phenotypes.append(self.forward(top_batch))
+            top_phenotypes.append(self.forward(torch.tensor(top_batch, dtype=torch.float32, device=self.device)))
         
         # Now do a backward pass of bottom_genes to top_phenotypes
         total_loss = 0
         for bottom_batch, top_phenotype in zip(bottom_batches, top_phenotypes):
-            bottom_batch_tensor = torch.tensor(bottom_batch, dtype=torch.float32).to(self.device)
+            bottom_batch_tensor = torch.tensor(bottom_batch, dtype=torch.float32, device=self.device)
             target_phenotype = top_phenotype.detach()  # Detach to prevent gradients flowing through targets
             
             self.optimizer.zero_grad()
@@ -99,8 +97,8 @@ class GeneSpaceDecoderBase(nn.Module):
         
         total_loss = 0
         for batch in batches:
-            batch_tensor = torch.tensor(batch, dtype=torch.float32).to(self.device)
-            target_phenotype = self.forward(torch.tensor(best_individual.genes, dtype=torch.float32).to(self.device)).detach()
+            batch_tensor = torch.tensor(batch, dtype=torch.float32, device=self.device)
+            target_phenotype = self.forward(torch.tensor(best_individual.genes, dtype=torch.float32, device=self.device)).detach()
             
             self.optimizer.zero_grad()
             predicted_phenotype = self.forward(batch_tensor)
@@ -114,21 +112,6 @@ class GeneSpaceDecoderBase(nn.Module):
         return average_loss
 
     def _backprop_each_to_next(self, individuals, selection_percent, batch_size):
-        """
-        Perform backpropagation on individuals, where each individual learns from the next individual.
-
-        This method selects top individuals based on the selection percentage, then trains each
-        individual to predict the phenotype of the next individual. This approach encourages
-        the network to learn a progression from lower-fitness to higher-fitness individuals.
-
-        Args:
-            individuals (list): List of Individual objects, assumed to be sorted by fitness.
-            selection_percent (float): Percentage of top individuals to select for training.
-            batch_size (int): Size of batches for processing (used for efficiency).
-
-        Returns:
-            float: Average loss across all individuals.
-        """
         # Select the top individuals
         num_selected = int(len(individuals) * selection_percent)
         selected_individuals = individuals[:num_selected]
@@ -140,8 +123,8 @@ class GeneSpaceDecoderBase(nn.Module):
             batch = selected_individuals[i:i+batch_size]
             next_individuals = selected_individuals[i+1:i+batch_size+1]
             
-            batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32).to(self.device)
-            next_genes = torch.tensor([ind.genes for ind in next_individuals], dtype=torch.float32).to(self.device)
+            batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32, device=self.device)
+            next_genes = torch.tensor([ind.genes for ind in next_individuals], dtype=torch.float32, device=self.device)
             
             self.optimizer.zero_grad()
             predicted_phenotypes = self.forward(batch_genes)
@@ -164,7 +147,7 @@ class GeneSpaceDecoderBase(nn.Module):
         for _ in range(n_gradients):
             gradient = {}
             for name, param in self.named_parameters():
-                gradient[name] = torch.randn_like(param) * self.lr
+                gradient[name] = torch.randn_like(param, device=self.device) * self.lr
             gradients.append(gradient)
 
         # Select the correct amount of individuals using the selection_percent
@@ -172,7 +155,7 @@ class GeneSpaceDecoderBase(nn.Module):
         selected_individuals = individuals[:num_selected]
 
         # Generate phenotypes once, outside the loop
-        genes = torch.tensor([ind.genes for ind in selected_individuals], dtype=torch.float32).to(self.device)
+        genes = torch.tensor([ind.genes for ind in selected_individuals], dtype=torch.float32, device=self.device)
 
         # Test each gradient
         original_state_dict = self.state_dict()
