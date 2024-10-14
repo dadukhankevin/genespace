@@ -1,0 +1,4 @@
+perlin-noise
+torch
+torchvision
+numpy

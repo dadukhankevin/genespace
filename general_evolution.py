@@ -21,3 +21,6 @@ class GeneralEvolution:
     def evolve(self, generations=100, backprop_mode=environments.BackpropMode.GRADIENT_DESCENT, backprop_every_n=1, epochs=1, selection_percent=.5, batch_size=32):
         self.environment.compile(start_population=20, max_individuals=100)
         self.environment.evolve(generations=generations, backprop_mode=backprop_mode, backprop_every_n=backprop_every_n, epochs=epochs, selection_percent=selection_percent, batch_size=batch_size)
+    
+
+    # TODO: Complete thiss
