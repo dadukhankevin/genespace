@@ -19,9 +19,9 @@ I'm no expert in biology, but as you likely remember from 7th grade science, our
 Interestingly, in biology, multiple genotypes can lead to the same phenotype. This leads to interesting concepts
 like convergent evolution, where two different species evolve similar traits in response to similar environmental pressures -- even with completely different underlying DNA (genotypes).
 
-On the other hand, sometimes the same genotype (DNA) can lead to different phenotypes (observable traits). This hints that there are some evolvable traits that are not encoded in our DNA (genotype), but are instead encoded in some other (possibly non-genetic) format. In biology, one of these is called *epigenetics*, which involves changes in gene expression without altering the DNA sequence itself. 
+On the other hand, sometimes the same genotype (DNA) can lead to different phenotypes (observable traits). This hints that there are some evolvable traits that are not encoded in our DNA (genotype), but are instead encoded in some other (possibly non-genetic) format. In biology, this is called*epigenetics*, which involves changes in phenotype without altering the DNA sequence itself. 
 
-## The Problem with Evolutionary Algorithms
+## The Problem with (current)Evolutionary Algorithms
 
 The difference between genotypes and phenotypes is fundamental to how biology works, and how evolution works in biology. Imagine if DNA and our observable traits had a 1-1 relationship. It would mean every cell in our body would need DNA telling it precisely where to be specifically, what atoms it requires, etc. Instead, we see that this is not the case. DNA is a highly compressed format for information, and our phenotypes are a result of this compressed information being *expressed/interpreted* in a specific way.
 
