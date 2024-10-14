@@ -17,7 +17,6 @@ __all__ = [
     'TournamentSelection',
     'RandomSelection',
     'RankBasedSelection',
-    'ConvolutionalGeneSpaceDecoder',
     'GRUGeneSpaceDecoder',
     'GeneSpaceDecoderBase'
 ]
