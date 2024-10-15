@@ -196,8 +196,8 @@ class GeneSpaceDecoderBase(nn.Module):
         return None  # Return None if no gradient improved fitness
 
 class MLPGeneSpaceDecoder(GeneSpaceDecoderBase):
-    def __init__(self, input_length, hidden_size=64, num_layers=3, output_shape=(10,), lr=0.001, device='cpu', activation=nn.LeakyReLU, output_activation=nn.Sigmoid):
-        super(MLPGeneSpaceDecoder, self).__init__(input_length, output_shape, lr, device)
+    def __init__(self, input_length, hidden_size=64, num_layers=3, output_shape=(10,), lr=0.001, device='cpu', activation=nn.LeakyReLU, output_activation=nn.Sigmoid, training_mode=TrainingMode.GOOD_TO_BEST):
+        super(MLPGeneSpaceDecoder, self).__init__(input_length, output_shape, lr, device, training_mode)
         
         self.hidden_size = hidden_size
         self.num_layers = num_layers
