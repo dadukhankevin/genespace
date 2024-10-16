@@ -6,5 +6,5 @@ class Individual:
     def __init__(self, genes: np.ndarray, gsp: MLPGeneSpaceDecoder):
         self.gsp = gsp 
         self.genes = genes  # Now a NumPy array
-        self.fitness = 0
+        self.fitness = float('-inf')
         self.modified = True
