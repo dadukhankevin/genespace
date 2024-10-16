@@ -424,6 +424,6 @@ print("Genes of the best individual:")
 print(environment.individuals[0].genes)
 ```
 
-This tutorial demonstrates how to use GeneSpace to solve the backpack problem, a classic optimization challenge. By running this code, you'll see how the genetic algorithm evolves a population of solutions to find an optimal or near-optimal selection of items for the backpack, considering weight limits, item values, and category constraints. 
-
+Et voila!
+ 
 Key point: Overall the algorithm for both the Image Evolution and Backpack Problem are very similar. Both use the same two layers, and both use a GeneSpaceDecoder to decode genotypes into phenotypes. 
