@@ -50,7 +50,8 @@ class Environment:
         batch_size = self.batch_size
         for i in range(0, len(individuals_for_measurement), batch_size):
             batch = individuals_for_measurement[i:i+batch_size]
-            batch_genes = torch.tensor([ind.genes for ind in batch], dtype=torch.float32).to(self.genepool.gsp.device)
+            batch_genes = np.array([ind.genes for ind in batch])
+            batch_genes = torch.from_numpy(batch_genes).float().to(self.genepool.gsp.device)
             
             phenotypes = self.genepool.gsp.forward(batch_genes).detach()
             batch_fitnesses = self.pbf_function(phenotypes)
@@ -108,4 +109,3 @@ class Environment:
     def plot(self):
         plt.plot(self.fitness_history)
         plt.show()
-        
