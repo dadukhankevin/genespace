@@ -1,6 +1,10 @@
 # GeneSpace: A New Framework for AGE: Artificial General Evolution
 
-GeneSpace is a genetic algorithm framework that aims to take the best concepts from *actual evolution* and bring them to the field of evolutionary computation.
+GeneSpace is a genetic algorithm framework that aims unify all genetic algorithms into one algorithm by using a *universal* genetic code, and neural network style *genespace decoders* to map genotypes to phenotypes.
+
+**It is very much a work in progress, and super rough around the edges.**
+
+I hope the potential still shows.
 
 ## Installation
 ```bash
@@ -11,14 +15,16 @@ git clone https://github.com/dadukhankevin/genespace
 ### Colab Notebook
 **Demo 1:** [Solve two problems with one algorithm](https://colab.research.google.com/drive/1PeIKc-5Iv8z19bOfarrv-mkxe5hQW3kT?usp=sharing)
 
-That's pretty much it, the goal is that every problem can be solved with this algorithm:
+That's pretty much it, the *goal* is that every problem can be solved with this algorithm:s
 ```python
 ge = general_evolution.GeneralEvolution(fitness_function, 
                                         output_shape=ANY_SHAPE, 
                                         device="cuda")
 ge.solve(SOME_NUMBER_OF_STEPS)
 ```
-It's far from perfect yet, but it's a start!
+It's far from perfect yet, but it's a start! All you have to do is change the fitness function, and the output shape.
+
+But behind this simple interface, a lot of interesting stuff is happening to make this work, here's how it works:
 
 ## Background: Phenotypes vs Genotypes
 I'm no expert in biology, but as you likely remember from 7th grade science, our existence can be explained in two ways:
