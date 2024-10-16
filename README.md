@@ -59,7 +59,7 @@ This means that over time, our GA will evolve genotypes that best decode into ph
 
 These techniques allow our GeneSpace to adaptively evolve the mapping between genotypes and phenotypes, creating a more flexible and powerful (co)evolutionary system. Going forward, I want to move away from backpropagation as much as possible.
 
-I have also been inspired by Stephen Wolfram's posts about "mining the mathematical universe" and as such, these algorithms focus on creating *genespace*(s) that just *happen* to work, and genes that just *happen* to exploit these neural networks appropriately. Without rhyme or reason really. I learned this could work when I accidentallydiscovered that genetic algorithms could *just so happen* to evolve prompts/images that trick the best image generation/recognition models into producing almost any desired output. This whole project is building on that discovery. 
+I have also been inspired by Stephen Wolfram's posts about "mining the mathematical universe" and as such, these algorithms focus on creating *genespace*(s) that just *happen* to work, and genes that just *happen* to exploit these neural networks appropriately. Without rhyme or reason really. I learned this could work when I accidentally discovered that genetic algorithms could *just so happen* to evolve prompts/images that trick the best image generation/recognition models into producing almost any desired output. This whole project is building on that discovery. 
 
 ## Current State
 
