@@ -89,8 +89,11 @@ Genetic algorithms that can evolve any arbitrary solution, with a universal -sha
 
 ## License
 
-This project is licensed under the MIT License. But I would appreciate it if you could give me a shout if you end up using this in a project!
+This project is licensed under the MIT License with Attribution:
 
+Copyright (c) 2024 [Daniel Losey](https://www.x.com/DanielJLosey)
+
+See the LICENSE file for more details.
 # Examples
 
 ## General Evolution
