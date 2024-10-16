@@ -4,7 +4,7 @@ from .individual import Individual
 from .layers import Layer, NPointCrossover, UniformMutation
 from .environments import Environment
 from .selection import Select, TournamentSelection, RandomSelection, RankBasedSelection
-
+from .general_evolution import GeneralEvolution
 __all__ = [
     'GenePool',
     'MLPGeneSpaceDecoder',
@@ -18,5 +18,6 @@ __all__ = [
     'RandomSelection',
     'RankBasedSelection',
     'GRUGeneSpaceDecoder',
-    'GeneSpaceDecoderBase'
+    'GeneSpaceDecoderBase',
+    'GeneralEvolution'
 ]
