@@ -8,6 +8,17 @@ git clone https://github.com/dadukhankevin/genespace
 ```
 
 ## About
+### Colab Notebook
+**Demo 1:** [Solve two problems with one algorithm](https://colab.research.google.com/drive/1PeIKc-5Iv8z19bOfarrv-mkxe5hQW3kT?usp=sharing)
+
+That's pretty much it, the goal is that every problem can be solved with this algorithm:
+```python
+ge = general_evolution.GeneralEvolution(fitness_function, 
+                                        output_shape=ANY_SHAPE, 
+                                        device="cuda")
+ge.solve(SOME_NUMBER_OF_STEPS)
+```
+It's far from perfect yet, but it's a start!
 
 ## Background: Phenotypes vs Genotypes
 I'm no expert in biology, but as you likely remember from 7th grade science, our existence can be explained in two ways:
