@@ -77,3 +77,353 @@ Genetic algorithms that can evolve any arbitrary solution, with a universal -sha
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details. But I would appreciate it if you could give me a shout if you end up using this in a project!
+
+# Examples
+
+## Image Evolution Demo
+
+Credit goes to PyGad for their image reconstruction demo as inspiration! Here we will take a similar concept, but use our neural networks to decode genotypes into phenotypes.
+
+***Note:*** Since the fitness function only has one perfect maximum, this is a bad problem to truly use genetic algorithms for, most GAs work better with large solution spaces. However since this example is visual (images) its nice and fun to test with.
+
+
+### Table of Contents
+1. [Setup](#setup)
+2. [Downloading a Target Image](#downloading-a-target-image)
+3. [Defining the Fitness Function](#defining-the-fitness-function)
+4. [Creating the Environment](#creating-the-environment)
+5. [Evolving the Image](#evolving-the-image)
+6. [Visualizing Results](#visualizing-results)
+
+### Setup
+
+First, clone the GeneSpace repository:
+
+```bash
+git clone https://github.com/dadukhankevin/genespace
+```
+
+Install the required dependencies:
+
+```bash
+pip install pillow requests numpy torch matplotlib
+```
+
+### Downloading a Target Image
+
+We'll start by downloading a target image that our genetic algorithm will try to evolve towards:
+
+```python
+from PIL import Image
+import requests
+from io import BytesIO
+import numpy as np
+import torch
+
+def download_image(size):
+    response = requests.get('https://static.wikia.nocookie.net/disney/images/6/64/Profile_-_Spider-Man.png/revision/latest?cb=20220320010954')
+    img = Image.open(BytesIO(response.content)).convert('RGB')
+    img = img.resize(size)
+    return np.array(img) / 255.0
+
+X = 50
+image = download_image((X, X))
+target_img_tensor = torch.from_numpy(image).float().to('cuda')
+
+# Display the image
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(5, 5))
+plt.imshow(image)
+plt.axis('off')
+plt.title('Target Image')
+plt.show()
+```
+
+### Defining the Fitness Function
+
+The fitness function evaluates how close each evolved image is to the target image. This is the *only* metric our genetic algorithm will use.
+
+```python
+import torch.nn.functional as F
+
+def batch_pheno_fitness(phenotypes):
+    target = target_img_tensor.unsqueeze(0).repeat(phenotypes.size(0), 1, 1, 1)
+    
+    if phenotypes.shape != target.shape:
+        phenotypes = phenotypes.permute(0, 3, 1, 2)
+    
+    mse = F.mse_loss(phenotypes, target, reduction='none')
+    mse = mse.view(mse.size(0), -1).mean(dim=1)
+    
+    fitness = 1 / (mse + 1e-8)
+    max_fitness = 1 / 1e-8
+    fitness_percentages = (fitness / max_fitness) * 100
+    
+    return fitness_percentages.tolist()
+```
+
+### Creating the Environment
+
+Set up the GeneSpace environment:
+
+```python
+from genespace import layers, genepool, decoders, selection, environments
+import torch.nn as nn
+
+cross_selection = selection.RankBasedSelection(amount_to_select=lambda: 2, factor=40)
+insertion_selection = selection.RankBasedSelection(amount_to_select=200, factor=-1)
+
+input_length = 1000
+output_shape = (X, X, 3)
+
+training_mode = decoders.TrainingMode.TOP_AND_BOTTOM_PERCENT
+gene_space_network = decoders.MLPGeneSpaceDecoder(
+    input_length=input_length,
+    hidden_size=20000,
+    num_layers=1,
+    output_shape=output_shape,
+    device='cuda',
+    lr=.0001,
+    activation=nn.LeakyReLU,
+    training_mode=training_mode
+)
+
+mode = environments.BackpropMode.GRADIENT_DESCENT
+gene_pool = genepool.GenePool(size=input_length, gsp=gene_space_network, binary_mode=True)
+
+environment = environments.Environment(
+    layers=[
+        layers.NPointCrossover(selection_function=cross_selection.select, families=16, children=4, n_points=8),
+        layers.BinaryFlipMutation(selection_function=insertion_selection.select, flip_rate=.05)
+    ],
+    genepool=gene_pool,
+    pbf_function=batch_pheno_fitness
+)
+
+environment.compile(start_population=10, max_individuals=200)
+```
+
+### Evolving the Image
+
+Run the evolution process:
+
+```python
+environment.evolve(generations=5000, epochs=1, backprop_every_n=10, selection_percent=.2, backprop_mode=mode, batch_size=128)
+
+environment.plot()
+```
+
+### Visualizing Results
+
+Render and display the evolved image. Here we take the genes of our best individual, pass them through our decoder, then display the result!
+
+```python
+def render_evolved_image(environment, index=0):
+    genes = environment.individuals[index].genes
+    genes_tensor = torch.tensor(genes, dtype=torch.float32).to(environment.genepool.gsp.device)
+    genes_tensor = genes_tensor.unsqueeze(0)
+    
+    with torch.no_grad():
+        phenotype = environment.genepool.gsp.forward(genes_tensor)
+    
+    image_array = phenotype.squeeze().cpu().numpy()
+    image_array = np.clip(image_array, 0, 1)
+    
+    plt.figure(figsize=(5, 5))
+    plt.imshow(image_array)
+    plt.axis('off')
+    plt.title(f'Evolved Image (Individual {index})')
+    plt.show()
+
+# Display target and evolved images
+plt.figure(figsize=(5, 5))
+plt.imshow(image)
+plt.axis('off')
+plt.title('Target Image')
+plt.show()
+
+render_evolved_image(environment)
+
+print(environment.individuals[0].genes)
+```
+
+Feel free to experiment with different parameters, fitness functions, or target images to see how they affect the evolution process! I'm sure there are better ways to set this up. 
+
+
+## GeneSpace Backpack Problem Tutorial
+
+This tutorial demonstrates how to use the GeneSpace framework to solve the classic backpack problem. We'll use a genetic algorithm to optimize item selection for a backpack, considering weight limits, item values, and category constraints.
+
+### Table of Contents
+1. [Setup](#setup)
+2. [Generating Random Items](#generating-random-items)
+3. [Defining the Fitness Function](#defining-the-fitness-function)
+4. [Configuring the Genetic Algorithm](#configuring-the-genetic-algorithm)
+5. [Creating the Environment](#creating-the-environment)
+6. [Running the Evolution](#running-the-evolution)
+7. [Analyzing Results](#analyzing-results)
+
+### Setup
+
+First, ensure you have the GeneSpace framework installed. If not, you can clone it from the repository:
+
+```bash
+git clone https://github.com/dadukhankevin/genespace
+```
+
+Import the necessary modules:
+
+```python
+from genespace import layers, genepool, decoders, selection, environments
+import numpy as np
+import torch
+import random
+import string
+```
+
+### Generating Random Items
+
+We'll start by creating a function to generate random items for our backpack problem:
+
+```python
+def generate_random_items(num_items, min_weight=0.1, max_weight=10.0, min_value=1, max_value=10, num_categories=8):
+    categories = list(string.ascii_uppercase[:num_categories])
+    
+    items = []
+    for _ in range(num_items):
+        weight = round(random.uniform(min_weight, max_weight), 2)
+        value = random.randint(min_value, max_value)
+        category = random.choice(categories)
+        items.append((weight, value, category))
+    
+    return items
+
+num_items = 50
+items = generate_random_items(num_items)
+```
+
+### Defining the Fitness Function
+
+The fitness function evaluates how good a solution is, considering the total value, weight limit, and category constraints:
+
+```python
+max_weight = 9  # Maximum weight the backpack can hold
+
+def backpack_fitness(phenotypes):
+    fitnesses = []
+    for phenotype in phenotypes:
+        total_weight = 0
+        total_value = 0
+        selected_categories = set()
+        penalty = 1
+
+        for i, (weight, value, category) in enumerate(items):
+            if phenotype[i] > 0.5:  # If the item is selected
+                if category in selected_categories:
+                    penalty += value * 2  # Penalty for duplicate category
+                else:
+                    selected_categories.add(category)
+                    total_weight += weight
+                    total_value += value
+
+        # Apply penalty for exceeding weight limit
+        if total_weight > max_weight:
+            overweight = total_weight - max_weight
+            penalty += overweight * 2
+
+        fitness = total_value / penalty
+        fitnesses.append(fitness)
+
+    return fitnesses
+```
+
+### Configuring the Genetic Algorithm
+
+Set up the parameters for the genetic algorithm:
+
+```python
+GENE_LENGTH = 250
+HIDDEN_SIZE = 256 * 10
+OUTPUT_SHAPE = (len(items),)
+LEARNING_RATE = 0.00001
+DEVICE = 'cpu'
+LAYERS = 1
+
+CROSSOVER = selection.RankBasedSelection(amount_to_select=2, factor=20)
+MUTATION = selection.RandomSelection(percent_to_select=1)
+MUTATION_MAGNITUDE = 0.1
+N_FAMILIES = 16
+CHILDREN = 4
+N_POINTS = 8
+
+GENE_SPACE = decoders.MLPGeneSpaceDecoder(
+    input_length=GENE_LENGTH,
+    hidden_size=HIDDEN_SIZE,
+    num_layers=LAYERS,
+    output_shape=OUTPUT_SHAPE,
+    device=DEVICE,
+    lr=LEARNING_RATE,
+)
+
+GENE_POOL = genepool.GenePool(size=GENE_LENGTH, gsp=GENE_SPACE, binary_mode=True)
+```
+
+### Creating the Environment
+
+Set up the GeneSpace environment:
+
+```python
+environment = environments.Environment(
+    layers=[
+        layers.NPointCrossover(selection_function=CROSSOVER.select, families=N_FAMILIES, children=CHILDREN, n_points=N_POINTS),
+        layers.BinaryFlipMutation(selection_function=MUTATION.select, flip_rate=MUTATION_MAGNITUDE)
+    ],
+    genepool=GENE_POOL,
+    pbf_function=backpack_fitness
+)
+
+environment.compile(start_population=200, max_individuals=200)
+```
+
+### Running the Evolution
+
+Execute the genetic algorithm:
+
+```python
+_ = environment.evolve(generations=300, backprop_every_n=10, selection_percent=.4)
+
+environment.plot()
+```
+
+### Analyzing Results
+
+After evolution, we can analyze the best solution:
+
+```python
+best_individual = environment.individuals[0]
+best_phenotype = GENE_SPACE.forward(torch.tensor(best_individual.genes, dtype=torch.float32).unsqueeze(0)).squeeze().detach().numpy()
+
+print("Best solution:")
+total_weight = 0
+total_value = 0
+selected_categories = set()
+for i, (weight, value, category) in enumerate(items):
+    if best_phenotype[i] > 0.5:
+        print(f"Item {i+1}: Weight {weight}, Value {value}, Category {category}")
+        total_weight += weight
+        total_value += value
+        selected_categories.add(category)
+
+print(f"\nTotal weight: {total_weight}")
+print(f"Total value: {total_value}")
+print(f"Number of unique categories: {len(selected_categories)}")
+
+# Print the genes of the best individual
+print("Genes of the best individual:")
+print(environment.individuals[0].genes)
+```
+
+This tutorial demonstrates how to use GeneSpace to solve the backpack problem, a classic optimization challenge. By running this code, you'll see how the genetic algorithm evolves a population of solutions to find an optimal or near-optimal selection of items for the backpack, considering weight limits, item values, and category constraints. 
+
+Key point: Overall the algorithm for both the Image Evolution and Backpack Problem are very similar. Both use the same two layers, and both use a GeneSpaceDecoder to decode genotypes into phenotypes. 
