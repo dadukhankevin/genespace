@@ -10,7 +10,7 @@ class Landscape(enum.Enum):
     LARGE = 3
 
 class GeneralEvolution:
-    def __init__(self, fitness_function, output_shape: tuple[int, ...], scale: float=1, input_length: int = 250):
+    def __init__(self, fitness_function, output_shape: tuple[int, ...], scale: float=1, input_length: int = 250, device: str = "cpu"):
 
         """
         I have no idea why these values seem to work, but got them through experementation and best guesses.
@@ -23,7 +23,7 @@ class GeneralEvolution:
         self.learn_rate = 0.00001
         self.max_population = 200 * self.scale
         
-        self.decoder = decoders.MLPGeneSpaceDecoder(input_length=input_length, hidden_size=self.hidden_size, num_layers=1, output_shape=output_shape, lr=self.learn_rate)
+        self.decoder = decoders.MLPGeneSpaceDecoder(input_length=input_length, hidden_size=self.hidden_size, num_layers=1, output_shape=output_shape, lr=self.learn_rate, device=device)
         self.genepool = genepool.GenePool(size=input_length*self.scale, gsp=self.decoder, binary_mode=True)
         self.num_families = int(max(16, self.max_population // 28)) 
         print("families: ", self.num_families)
